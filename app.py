@@ -43,10 +43,9 @@ else:
             lon=anc_df[lon_col],
             mode='markers',
             marker=go.scattermapbox.Marker(
-                size=anc_df['anc'].clamp(1, 15) + 2,
+                size=anc_df['anc'].clip(1, 15) + 2,
                 color='#FF00FF',  # Neon Magenta
-                opacity=0.6,
-                name='Ancient Sites'
+                opacity=0.6
             ),
             name="Ancient Sites",
             text=[f"Ancient Sites Intensity: {v}" for v in anc_df['anc']],
@@ -61,16 +60,16 @@ else:
             lon=nuc_df[lon_col],
             mode='markers',
             marker=go.scattermapbox.Marker(
-                size=nuc_df['nuc'].clamp(1, 15) + 3,
+                size=nuc_df['nuc'].clip(1, 15) + 3,
                 color='#00FFFF',  # Neon Cyan
-                opacity=0.7,
+                opacity=0.7
             ),
             name="Nuclear Infra",
             text=[f"Nuclear Node Weight: {v}" for v in nuc_df['nuc']],
             hoverinfo='text'
         ))
 
-    # 🌟 LAYER 3: UAP Events (Electric Yellow/Orange Core)
+    # 🌟 LAYER 3: UAP Events (Electric Orange Core)
     if show_uap and 'uap' in df.columns:
         uap_df = df[df['uap'] > 0]
         fig.add_trace(go.Scattermapbox(
@@ -78,9 +77,9 @@ else:
             lon=uap_df[lon_col],
             mode='markers',
             marker=go.scattermapbox.Marker(
-                size=uap_df['uap'].clamp(1, 12),
+                size=uap_df['uap'].clip(1, 12),
                 color='#FFAA00',  # Electric Orange
-                opacity=0.75,
+                opacity=0.75
             ),
             name="UAP Sightings",
             text=[f"UAP Count: {v}" for v in uap_df['uap']],
@@ -95,9 +94,9 @@ else:
             lon=uso_df[lon_col],
             mode='markers',
             marker=go.scattermapbox.Marker(
-                size=uso_df['uso'].clamp(1, 12),
+                size=uso_df['uso'].clip(1, 12),
                 color='#0088FF',  # Deep Blue
-                opacity=0.75,
+                opacity=0.75
             ),
             name="USO Events",
             text=[f"USO Count: {v}" for v in uso_df['uso']],
@@ -114,7 +113,7 @@ else:
             marker=go.scattermapbox.Marker(
                 size=4,
                 color='#00FF66',  # Emerald Green
-                opacity=0.4,
+                opacity=0.4
             ),
             name="Magnetic Anomalies",
             text=[f"Mag Anomaly: {v}" for v in mag_df['mag']],
