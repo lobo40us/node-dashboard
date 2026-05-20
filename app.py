@@ -36,64 +36,65 @@ else:
     fig = go.Figure()
     
     # -----------------------------------------------------------------------------
-    # BASE BACKGROUND MATRIX FIELDS (Plotted first so they sit underneath phenomena)
+    # BASE BACKGROUND MATRIX FIELDS (Unbroken Grid Structure)
     # -----------------------------------------------------------------------------
     
     # 🌟 LAYER 1: Magnetic Anomalies (Emerald Outlines - Baseline Field)
     if show_mag and 'mag' in df.columns:
-        mag_df = df[df['mag'] > 0]
         fig.add_trace(go.Scattermapbox(
-            lat=mag_df[lat_col],
-            lon=mag_df[lon_col],
+            lat=df[lat_col],
+            lon=df[lon_col],
             mode='markers',
             marker=go.scattermapbox.Marker(
                 size=3,
-                color='#00FF66',  # Emerald Green
-                opacity=0.35
+                color=df['mag'],
+                colorscale=[
+                    [0.0, 'rgba(0, 255, 102, 0.0)'],
+                    [1.0, 'rgba(0, 255, 102, 0.6)']
+                ],
+                showscale=False
             ),
             name="Magnetic Anomalies",
-            text=[f"Mag Anomaly: {v:.1f} nT" for v in mag_df['mag']],
+            text=[f"Mag Anomaly: {v:.1f} nT" if pd.notna(v) else "Mag: 0" for v in df['mag']],
             hoverinfo='text'
         ))
 
-    # 🌟 LAYER 2: Ancient Sacred Sites (Continuous Matrix Layer via Opacity Scaling)
+    # 🌟 LAYER 2: Ancient Sacred Sites (Unbroken Grid Mesh)
     if show_anc and 'anc' in df.columns:
-        anc_df = df[df['anc'] > 0]
         fig.add_trace(go.Scattermapbox(
-            lat=anc_df[lat_col],
-            lon=anc_df[lon_col],
+            lat=df[lat_col],
+            lon=df[lon_col],
             mode='markers',
             marker=go.scattermapbox.Marker(
-                size=4,  # Small uniform size isolates individual 1x1 degree cells
-                color=anc_df['anc'],
+                size=4,  # Sharp uniform grid nodes
+                color=df['anc'].fillna(0),
                 colorscale=[
-                    [0.0, 'rgba(255, 0, 255, 0.0)'],   # Zero neighbor weight = transparent
-                    [0.2, 'rgba(255, 0, 255, 0.2)'],   # Low background presence
-                    [0.6, 'rgba(255, 0, 255, 0.5)'],   # Medium field concentration
-                    [1.0, 'rgba(255, 0, 255, 0.95)']   # Core sacred site node proximity
+                    [0.0, 'rgba(255, 255, 255, 0.12)'], # Zero nodes show up as a faint white structural mesh point
+                    [0.1, 'rgba(21A, 0, 255, 0.3)'],   # Low background scores
+                    [0.5, 'rgba(255, 0, 255, 0.6)'],   # Clear signal presence
+                    [1.0, 'rgba(255, 0, 255, 0.95)']   # Maximum intensity node
                 ],
                 showscale=False
             ),
             name="Ancient Sites Field",
-            text=[f"Ancient Intensity: {v:.2f}" for v in anc_df['anc']],
+            text=[f"Ancient Intensity: {v:.2f}" if pd.notna(v) else "Ancient: 0" for v in df['anc']],
             hoverinfo='text'
         ))
         
-    # 🌟 LAYER 3: Nuclear Infrastructure (Exponential Decay Field via Opacity Scaling)
+    # 🌟 LAYER 3: Nuclear Infrastructure (Unbroken Decay Field)
     if show_nuc and 'nuc' in df.columns:
-        nuc_df = df[df['nuc'] > 0]
         fig.add_trace(go.Scattermapbox(
-            lat=nuc_df[lat_col],
-            lon=nuc_df[lon_col],
+            lat=df[lat_col],
+            lon=df[lon_col],
             mode='markers',
             marker=go.scattermapbox.Marker(
-                size=4,  # Lock size small to stop continental color-bleeding completely
-                color=nuc_df['nuc'],
+                size=4,
+                color=df['nuc'].fillna(0),
                 colorscale=[
-                    [0.0, 'rgba(0, 255, 255, 0.0)'],   # Faded peripheral edge
-                    [0.15, 'rgba(0, 255, 255, 0.25)'], # Falling contour field
-                    [0.5, 'rgba(0, 255, 255, 0.55)'],  # Ascending proximity field
-                    [1.0, 'rgba(0, 255, 255, 0.95)']   # Solid active reactor core node
+                    [0.0, 'rgba(255, 255, 255, 0.05)'], # Minimal structural dots
+                    [0.15, 'rgba(0, 255, 255, 0.3)'],  # Subtle decay glow
+                    [0.6, 'rgba(0, 255, 255, 0.6)'],   # Strong proximity field
+                    [1.0, 'rgba(0, 255, 255, 0.95)']   # Active reactor center
                 ],
                 showscale=True,
                 colorbar=dict(
@@ -106,12 +107,12 @@ else:
                 )
             ),
             name="Nuclear Decay Contours",
-            text=[f"Decay Contour Score: {v:.3f}" for v in nuc_df['nuc']],
+            text=[f"Decay Contour Score: {v:.3f}" if pd.notna(v) else "Decay: 0" for v in df['nuc']],
             hoverinfo='text'
         ))
 
     # -----------------------------------------------------------------------------
-    # PHENOMENA POINT OVERLAYS (Plotted last to pierce sharply through base grids)
+    # PHENOMENA POINT OVERLAYS (Sharp Points Mounted Above the Grid)
     # -----------------------------------------------------------------------------
 
     # 🌟 LAYER 4: UAP Events (Electric Orange Sharp Points)
@@ -122,9 +123,9 @@ else:
             lon=uap_df[lon_col],
             mode='markers',
             marker=go.scattermapbox.Marker(
-                size=uap_df['uap'].clip(3, 10),  # Scaled safely to remain legible
-                color='#FFAA00',  # Solid High-Contrast Electric Orange
-                opacity=0.9
+                size=uap_df['uap'].clip(4, 10),  # Boosted minimum size slightly for mobile visibility
+                color='#FFAA00',  
+                opacity=0.95
             ),
             name="UAP Sightings",
             text=[f"UAP Count: {v}" for v in uap_df['uap']],
@@ -139,27 +140,27 @@ else:
             lon=uso_df[lon_col],
             mode='markers',
             marker=go.scattermapbox.Marker(
-                size=uso_df['uso'].clip(3, 10),
-                color='#00CCFF',  # Electric Sea Teal
-                opacity=0.9
+                size=uso_df['uso'].clip(4, 10),
+                color='#00CCFF',  
+                opacity=0.95
             ),
             name="USO Events",
             text=[f"USO Count: {v}" for v in uso_df['uso']],
             hoverinfo='text'
         ))
 
-    # 📱 OPTIMIZED VIEWPORT DESIGN FOR MOBILE DEPLOYMENT
+    # 📱 VIEWPORT CENTERED DIRECTLY ON EUROPE FOR INSTANT LOADING
     fig.update_layout(
         mapbox=dict(
             style="carto-darkmatter",
-            center={"lat": 38.0, "lon": -95.0},  # Centered cleanly on North America matrix
-            zoom=2.3  # Tailored default starting scale for tablet/phone screens
+            center={"lat": 50.0, "lon": 10.0},  # Perfect baseline default framing for European data
+            zoom=3.2  # Slightly closer crop to let individual 1-degree steps pop out clearly
         ),
         margin={"r":0,"t":0,"l":0,"b":0},
         height=680,
         showlegend=True,
         legend=dict(
-            orientation="h",       # Horizontal orientation stacks flawlessly on small screens
+            orientation="h",       
             yanchor="bottom",
             y=0.01,
             xanchor="center",
