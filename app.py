@@ -36,21 +36,21 @@ else:
     fig = go.Figure()
     
     # -----------------------------------------------------------------------------
-    # BASE BACKGROUND MATRIX FIELDS (Unbroken Grid Structure)
+    # UNBROKEN GLOBAL GRID MATRIX LAYERS (All layers share the exact same grid layout)
     # -----------------------------------------------------------------------------
     
-    # 🌟 LAYER 1: Magnetic Anomalies (Emerald Outlines - Baseline Field)
+    # 🌟 LAYER 1: Magnetic Anomalies (Emerald Outlines Mesh)
     if show_mag and 'mag' in df.columns:
         fig.add_trace(go.Scattermapbox(
             lat=df[lat_col],
             lon=df[lon_col],
             mode='markers',
             marker=go.scattermapbox.Marker(
-                size=3,
+                size=4,
                 color=df['mag'].fillna(0),
                 colorscale=[
-                    [0.0, 'rgba(0, 255, 102, 0.0)'],
-                    [1.0, 'rgba(0, 255, 102, 0.6)']
+                    [0.0, 'rgba(255, 255, 255, 0.05)'], # Faint structural white placeholder
+                    [1.0, 'rgba(0, 255, 102, 0.75)']   # Deep emerald green for peak anomalies
                 ],
                 showscale=False
             ),
@@ -59,20 +59,20 @@ else:
             hoverinfo='text'
         ))
 
-    # 🌟 LAYER 2: Ancient Sacred Sites (Unbroken Grid Mesh)
+    # 🌟 LAYER 2: Ancient Sacred Sites (Magenta Mesh)
     if show_anc and 'anc' in df.columns:
         fig.add_trace(go.Scattermapbox(
             lat=df[lat_col],
             lon=df[lon_col],
             mode='markers',
             marker=go.scattermapbox.Marker(
-                size=4,  # Sharp uniform grid nodes
+                size=4,  
                 color=df['anc'].fillna(0),
                 colorscale=[
-                    [0.0, 'rgba(255, 255, 255, 0.12)'], # Zero nodes show up as a faint white structural mesh point
+                    [0.0, 'rgba(255, 255, 255, 0.12)'], 
                     [0.1, 'rgba(210, 0, 255, 0.3)'],   
-                    [0.5, 'rgba(255, 0, 255, 0.6)'],   # Clear signal presence
-                    [1.0, 'rgba(255, 0, 255, 0.95)']   # Maximum intensity node
+                    [0.5, 'rgba(255, 0, 255, 0.6)'],   
+                    [1.0, 'rgba(255, 0, 255, 0.95)']   
                 ],
                 showscale=False
             ),
@@ -81,82 +81,107 @@ else:
             hoverinfo='text'
         ))
         
-    # 🌟 LAYER 3: Nuclear Infrastructure (Unbroken Decay Field)
+    # 🌟 LAYER 3: Nuclear Infrastructure (Cyan Mesh)
     if show_nuc and 'nuc' in df.columns:
-        # Verify if column contains actual valid computed variances to pass to colorbar
         has_variance = df['nuc'].nunique() > 1 if 'nuc' in df.columns else False
+        nuc_color_series = df['nuc'].fillna(0)
         
+        if has_variance:
+            fig.add_trace(go.Scattermapbox(
+                lat=df[lat_col],
+                lon=df[lon_col],
+                mode='markers',
+                marker=go.scattermapbox.Marker(
+                    size=4,
+                    color=nuc_color_series,
+                    colorscale=[
+                        [0.0, 'rgba(255, 255, 255, 0.05)'], 
+                        [0.15, 'rgba(0, 255, 255, 0.3)'],  
+                        [0.6, 'rgba(0, 255, 255, 0.6)'],   
+                        [1.0, 'rgba(0, 255, 255, 0.95)']   
+                    ],
+                    showscale=True,
+                    colorbar=dict(
+                        title="Nuc Decay Contour",
+                        thickness=12,
+                        len=0.4,
+                        x=1.01,
+                        tickfont=dict(color="white", size=9),
+                        titlefont=dict(color="white", size=10)
+                    )
+                ),
+                name="Nuclear Decay Contours",
+                text=[f"Decay Contour Score: {v:.3f}" if pd.notna(v) else "Decay: 0" for v in df['nuc']],
+                hoverinfo='text'
+            ))
+        else:
+            fig.add_trace(go.Scattermapbox(
+                lat=df[lat_col],
+                lon=df[lon_col],
+                mode='markers',
+                marker=go.scattermapbox.Marker(
+                    size=4,
+                    color=nuc_color_series,
+                    colorscale=[
+                        [0.0, 'rgba(255, 255, 255, 0.05)'], 
+                        [1.0, 'rgba(0, 255, 255, 0.6)']   
+                    ],
+                    showscale=False
+                ),
+                name="Nuclear Decay Contours",
+                text=[f"Decay Contour Score: {v:.3f}" if pd.notna(v) else "Decay: 0" for v in df['nuc']],
+                hoverinfo='text'
+            ))
+
+    # 🌟 LAYER 4: UAP Events (Electric Orange Mesh)
+    if show_uap and 'uap' in df.columns:
         fig.add_trace(go.Scattermapbox(
             lat=df[lat_col],
             lon=df[lon_col],
             mode='markers',
             marker=go.scattermapbox.Marker(
-                size=4,
-                color=df['nuc'].fillna(0),
+                size=4,  # Match the exact uniform grid sizing
+                color=df['uap'].fillna(0),
                 colorscale=[
-                    [0.0, 'rgba(255, 255, 255, 0.05)'], 
-                    [0.15, 'rgba(0, 255, 255, 0.3)'],  
-                    [0.6, 'rgba(0, 255, 255, 0.6)'],   
-                    [1.0, 'rgba(0, 255, 255, 0.95)']   
+                    [0.0, 'rgba(255, 255, 255, 0.05)'], # Zero hits stay a faint background dot
+                    [0.2, 'rgba(255, 170, 0, 0.3)'],   # Low density
+                    [0.6, 'rgba(255, 170, 0, 0.6)'],   # Medium concentration
+                    [1.0, 'rgba(255, 170, 0, 0.95)']   # Peak UAP activity hotspot
                 ],
-                showscale=True if has_variance else False,
-                colorbar=dict(
-                    title="Nuc Decay Contour",
-                    thickness=12,
-                    len=0.4,
-                    x=1.01,
-                    tickfont=dict(color="white", size=9),
-                    titlefont=dict(color="white", size=10)
-                ) if has_variance else None # Safe dynamic configuration to block runtime ValueError drops
+                showscale=False
             ),
-            name="Nuclear Decay Contours",
-            text=[f"Decay Contour Score: {v:.3f}" if pd.notna(v) else "Decay: 0" for v in df['nuc']],
+            name="UAP Sightings Field",
+            text=[f"UAP Count: {int(v)}" if pd.notna(v) else "UAP: 0" for v in df['uap']],
             hoverinfo='text'
         ))
 
-    # -----------------------------------------------------------------------------
-    # PHENOMENA POINT OVERLAYS (Sharp Points Mounted Above the Grid)
-    # -----------------------------------------------------------------------------
-
-    # 🌟 LAYER 4: UAP Events (Electric Orange Sharp Points)
-    if show_uap and 'uap' in df.columns:
-        uap_df = df[df['uap'] > 0]
-        fig.add_trace(go.Scattermapbox(
-            lat=uap_df[lat_col],
-            lon=uap_df[lon_col],
-            mode='markers',
-            marker=go.scattermapbox.Marker(
-                size=uap_df['uap'].clip(4, 10),  
-                color='#FFAA00',  
-                opacity=0.95
-            ),
-            name="UAP Sightings",
-            text=[f"UAP Count: {v}" for v in uap_df['uap']],
-            hoverinfo='text'
-        ))
-
-    # 🌟 LAYER 5: USO Submerged Events (Deep Teal Blue Marine Points)
+    # 🌟 LAYER 5: USO Submerged Events (Deep Teal Blue Mesh)
     if show_uso and 'uso' in df.columns:
-        uso_df = df[df['uso'] > 0]
         fig.add_trace(go.Scattermapbox(
-            lat=uso_df[lat_col],
-            lon=uso_df[lon_col],
+            lat=df[lat_col],
+            lon=df[lon_col],
             mode='markers',
             marker=go.scattermapbox.Marker(
-                size=uso_df['uso'].clip(4, 10),
-                color='#00CCFF',  
-                opacity=0.95
+                size=4,  # Match the exact uniform grid sizing
+                color=df['uso'].fillna(0),
+                colorscale=[
+                    [0.0, 'rgba(255, 255, 255, 0.05)'], # Zero marine hits stay a faint background dot
+                    [0.2, 'rgba(0, 204, 255, 0.3)'],   
+                    [0.6, 'rgba(0, 204, 255, 0.6)'],   
+                    [1.0, 'rgba(0, 204, 255, 0.95)']   
+                ],
+                showscale=False
             ),
-            name="USO Events",
-            text=[f"USO Count: {v}" for v in uso_df['uso']],
+            name="USO Events Field",
+            text=[f"USO Count: {int(v)}" if pd.notna(v) else "USO: 0" for v in df['uso']],
             hoverinfo='text'
         ))
 
-    # 📱 VIEWPORT CENTERED DIRECTLY ON EUROPE FOR INSTANT LOADING
+    # 📱 VIEWPORT CONFIGURATIONS
     fig.update_layout(
         mapbox=dict(
             style="carto-darkmatter",
-            center={"lat": 50.0, "lon": 10.0},  # Perfect default framing for your active matrix
+            center={"lat": 50.0, "lon": 10.0},  # Europe default framing
             zoom=3.2  
         ),
         margin={"r":0,"t":0,"l":0,"b":0},
