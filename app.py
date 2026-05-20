@@ -70,7 +70,7 @@ else:
                 color=df['anc'].fillna(0),
                 colorscale=[
                     [0.0, 'rgba(255, 255, 255, 0.12)'], # Zero nodes show up as a faint white structural mesh point
-                    [0.1, 'rgba(21A, 0, 255, 0.3)'],   # Low background scores
+                    [0.1, 'rgba(210, 0, 255, 0.3)'],   # FIXED: '21A' changed to valid '210'
                     [0.5, 'rgba(255, 0, 255, 0.6)'],   # Clear signal presence
                     [1.0, 'rgba(255, 0, 255, 0.95)']   # Maximum intensity node
                 ],
@@ -123,7 +123,7 @@ else:
             lon=uap_df[lon_col],
             mode='markers',
             marker=go.scattermapbox.Marker(
-                size=uap_df['uap'].clip(4, 10),  # Boosted minimum size slightly for mobile visibility
+                size=uap_df['uap'].clip(4, 10),  
                 color='#FFAA00',  
                 opacity=0.95
             ),
