@@ -41,19 +41,19 @@ else:
     
     # 🌟 LAYER 1: Magnetic Anomalies (Emerald Outlines Mesh)
     if show_mag and 'mag' in df.columns:
-        fig.add_trace(go.Scattermapbox(
-            lat=df[lat_col],
-            lon=df[lon_col],
-            mode='markers',
-            marker=go.scattermapbox.Marker(
+        has_variance = df['mag'].nunique() > 1
+        if has_variance:
+            mag_marker = go.scattermapbox.Marker(
                 size=4,
                 color=df['mag'].fillna(0),
-                colorscale=[
-                    [0.0, 'rgba(255, 255, 255, 0.05)'], 
-                    [1.0, 'rgba(0, 255, 102, 0.75)']   
-                ],
+                colorscale=[[0.0, 'rgba(255, 255, 255, 0.05)'], [1.0, 'rgba(0, 255, 102, 0.75)']],
                 showscale=False
-            ),
+            )
+        else:
+            mag_marker = go.scattermapbox.Marker(size=4, color='rgba(0, 255, 102, 0.15)')
+
+        fig.add_trace(go.Scattermapbox(
+            lat=df[lat_col], lon=df[lon_col], mode='markers', marker=mag_marker,
             name="Magnetic Anomalies",
             text=[f"Mag Anomaly: {v:.1f} nT" if pd.notna(v) else "Mag: 0" for v in df['mag']],
             hoverinfo='text'
@@ -61,12 +61,10 @@ else:
 
     # 🌟 LAYER 2: Ancient Sacred Sites (Magenta Mesh)
     if show_anc and 'anc' in df.columns:
-        fig.add_trace(go.Scattermapbox(
-            lat=df[lat_col],
-            lon=df[lon_col],
-            mode='markers',
-            marker=go.scattermapbox.Marker(
-                size=4,  
+        has_variance = df['anc'].nunique() > 1
+        if has_variance:
+            anc_marker = go.scattermapbox.Marker(
+                size=4,
                 color=df['anc'].fillna(0),
                 colorscale=[
                     [0.0, 'rgba(255, 255, 255, 0.12)'], 
@@ -75,26 +73,27 @@ else:
                     [1.0, 'rgba(255, 0, 255, 0.95)']   
                 ],
                 showscale=False
-            ),
+            )
+        else:
+            anc_marker = go.scattermapbox.Marker(size=4, color='rgba(255, 0, 255, 0.15)')
+
+        fig.add_trace(go.Scattermapbox(
+            lat=df[lat_col], lon=df[lon_col], mode='markers', marker=anc_marker,
             name="Ancient Sites Field",
             text=[f"Ancient Intensity: {v:.2f}" if pd.notna(v) else "Ancient: 0" for v in df['anc']],
             hoverinfo='text'
         ))
         
-    # 🌟 LAYER 3: Nuclear Infrastructure (Cyan Mesh - Decoupled Compilation Paths)
+    # 🌟 LAYER 3: Nuclear Infrastructure (Cyan Mesh - Definitively Bypassing Plotly Bug)
     if show_nuc and 'nuc' in df.columns:
-        has_variance = df['nuc'].nunique() > 1 if 'nuc' in df.columns else False
-        nuc_color_series = df['nuc'].fillna(0)
+        has_variance = df['nuc'].nunique() > 1
         
         if has_variance:
-            # Explicit execution path WITH colorbar parameters mapped
             fig.add_trace(go.Scattermapbox(
-                lat=df[lat_col],
-                lon=df[lon_col],
-                mode='markers',
+                lat=df[lat_col], lon=df[lon_col], mode='markers',
                 marker=go.scattermapbox.Marker(
                     size=4,
-                    color=nuc_color_series,
+                    color=df['nuc'].fillna(0),
                     colorscale=[
                         [0.0, 'rgba(255, 255, 255, 0.05)'], 
                         [0.15, 'rgba(0, 255, 255, 0.3)'],  
@@ -103,12 +102,8 @@ else:
                     ],
                     showscale=True,
                     colorbar=dict(
-                        title="Nuc Decay Contour",
-                        thickness=12,
-                        len=0.4,
-                        x=1.01,
-                        tickfont=dict(color="white", size=9),
-                        titlefont=dict(color="white", size=10)
+                        title="Nuc Decay Contour", thickness=12, len=0.4, x=1.01,
+                        tickfont=dict(color="white", size=9), titlefont=dict(color="white", size=10)
                     )
                 ),
                 name="Nuclear Decay Contours",
@@ -116,33 +111,24 @@ else:
                 hoverinfo='text'
             ))
         else:
-            # Explicit execution path WITHOUT colorbar parameters mapped (Prevents ValError)
+            # Clean uniform fallback if data is flat zero: absolutely no colorbar or colorscale declarations to trigger crashes
             fig.add_trace(go.Scattermapbox(
-                lat=df[lat_col],
-                lon=df[lon_col],
-                mode='markers',
+                lat=df[lat_col], lon=df[lon_col], mode='markers',
                 marker=go.scattermapbox.Marker(
                     size=4,
-                    color=nuc_color_series,
-                    colorscale=[
-                        [0.0, 'rgba(255, 255, 255, 0.05)'], 
-                        [1.0, 'rgba(0, 255, 255, 0.6)']   
-                    ],
-                    showscale=False
+                    color='rgba(0, 255, 255, 0.15)'  # Safe, uniform structural mesh color placeholder
                 ),
                 name="Nuclear Decay Contours",
-                text=[f"Decay Contour Score: {v:.3f}" if pd.notna(v) else "Decay: 0" for v in df['nuc']],
+                text=["Decay: 0" for _ in range(len(df))],
                 hoverinfo='text'
             ))
 
     # 🌟 LAYER 4: UAP Events (Electric Orange Mesh)
     if show_uap and 'uap' in df.columns:
-        fig.add_trace(go.Scattermapbox(
-            lat=df[lat_col],
-            lon=df[lon_col],
-            mode='markers',
-            marker=go.scattermapbox.Marker(
-                size=4,  
+        has_variance = df['uap'].nunique() > 1
+        if has_variance:
+            uap_marker = go.scattermapbox.Marker(
+                size=4,
                 color=df['uap'].fillna(0),
                 colorscale=[
                     [0.0, 'rgba(255, 255, 255, 0.05)'], 
@@ -151,7 +137,12 @@ else:
                     [1.0, 'rgba(255, 170, 0, 0.95)']   
                 ],
                 showscale=False
-            ),
+            )
+        else:
+            uap_marker = go.scattermapbox.Marker(size=4, color='rgba(255, 170, 0, 0.15)')
+
+        fig.add_trace(go.Scattermapbox(
+            lat=df[lat_col], lon=df[lon_col], mode='markers', marker=uap_marker,
             name="UAP Sightings Field",
             text=[f"UAP Count: {int(v)}" if pd.notna(v) else "UAP: 0" for v in df['uap']],
             hoverinfo='text'
@@ -159,12 +150,10 @@ else:
 
     # 🌟 LAYER 5: USO Submerged Events (Deep Teal Blue Mesh)
     if show_uso and 'uso' in df.columns:
-        fig.add_trace(go.Scattermapbox(
-            lat=df[lat_col],
-            lon=df[lon_col],
-            mode='markers',
-            marker=go.scattermapbox.Marker(
-                size=4,  
+        has_variance = df['uso'].nunique() > 1
+        if has_variance:
+            uso_marker = go.scattermapbox.Marker(
+                size=4,
                 color=df['uso'].fillna(0),
                 colorscale=[
                     [0.0, 'rgba(255, 255, 255, 0.05)'], 
@@ -173,7 +162,12 @@ else:
                     [1.0, 'rgba(0, 204, 255, 0.95)']   
                 ],
                 showscale=False
-            ),
+            )
+        else:
+            uso_marker = go.scattermapbox.Marker(size=4, color='rgba(0, 204, 255, 0.15)')
+
+        fig.add_trace(go.Scattermapbox(
+            lat=df[lat_col], lon=df[lon_col], mode='markers', marker=uso_marker,
             name="USO Events Field",
             text=[f"USO Count: {int(v)}" if pd.notna(v) else "USO: 0" for v in df['uso']],
             hoverinfo='text'
@@ -183,21 +177,15 @@ else:
     fig.update_layout(
         mapbox=dict(
             style="carto-darkmatter",
-            center={"lat": 50.0, "lon": 10.0},  # Centered on Europe study area
+            center={"lat": 50.0, "lon": 10.0},  # Europe center
             zoom=3.2  
         ),
         margin={"r":0,"t":0,"l":0,"b":0},
         height=680,
         showlegend=True,
         legend=dict(
-            orientation="h",       
-            yanchor="bottom",
-            y=0.01,
-            xanchor="center",
-            x=0.5,
-            bgcolor="rgba(10,10,10,0.85)",
-            bordercolor="rgba(255,255,255,0.1)",
-            borderwidth=1,
+            orientation="h", yanchor="bottom", y=0.01, xanchor="center", x=0.5,
+            bgcolor="rgba(10,10,10,0.85)", bordercolor="rgba(255,255,255,0.1)", borderwidth=1,
             font=dict(color="white", size=9)
         )
     )
