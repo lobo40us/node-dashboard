@@ -36,7 +36,7 @@ else:
     fig = go.Figure()
     
     # -----------------------------------------------------------------------------
-    # UNBROKEN GLOBAL GRID MATRIX LAYERS (Using Strict go.scattermapbox.Marker)
+    # UNBROKEN GLOBAL GRID MATRIX LAYERS (Shared Uniform Structural Mesh Layout)
     # -----------------------------------------------------------------------------
     
     # 🌟 LAYER 1: Magnetic Anomalies (Emerald Outlines Mesh)
@@ -81,12 +81,13 @@ else:
             hoverinfo='text'
         ))
         
-    # 🌟 LAYER 3: Nuclear Infrastructure (Cyan Mesh - Safe Isolated Architecture)
+    # 🌟 LAYER 3: Nuclear Infrastructure (Cyan Mesh - Decoupled Compilation Paths)
     if show_nuc and 'nuc' in df.columns:
         has_variance = df['nuc'].nunique() > 1 if 'nuc' in df.columns else False
         nuc_color_series = df['nuc'].fillna(0)
         
         if has_variance:
+            # Explicit execution path WITH colorbar parameters mapped
             fig.add_trace(go.Scattermapbox(
                 lat=df[lat_col],
                 lon=df[lon_col],
@@ -115,6 +116,7 @@ else:
                 hoverinfo='text'
             ))
         else:
+            # Explicit execution path WITHOUT colorbar parameters mapped (Prevents ValError)
             fig.add_trace(go.Scattermapbox(
                 lat=df[lat_col],
                 lon=df[lon_col],
@@ -181,7 +183,7 @@ else:
     fig.update_layout(
         mapbox=dict(
             style="carto-darkmatter",
-            center={"lat": 50.0, "lon": 10.0},  # Default Western Europe framing
+            center={"lat": 50.0, "lon": 10.0},  # Centered on Europe study area
             zoom=3.2  
         ),
         margin={"r":0,"t":0,"l":0,"b":0},
