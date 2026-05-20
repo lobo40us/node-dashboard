@@ -36,7 +36,7 @@ else:
     fig = go.Figure()
     
     # -----------------------------------------------------------------------------
-    # UNBROKEN GLOBAL GRID MATRIX LAYERS (Custom RGBA scales to prevent line bleeding)
+    # UNBROKEN GLOBAL GRID MATRIX LAYERS (Shared Uniform Structural Mesh Layout)
     # -----------------------------------------------------------------------------
     
     # 🌟 LAYER 1: Magnetic Anomalies (Emerald Outlines Mesh)
@@ -49,8 +49,8 @@ else:
                 size=4,
                 color=df['mag'].fillna(0),
                 colorscale=[
-                    [0.0, 'rgba(255, 255, 255, 0.05)'], # Faint white node skeleton
-                    [1.0, 'rgba(0, 255, 102, 0.85)']   # Vibrant emerald signal
+                    [0.0, 'rgba(255, 255, 255, 0.05)'], 
+                    [1.0, 'rgba(0, 255, 102, 0.85)']   
                 ],
                 showscale=False
             ),
@@ -69,10 +69,10 @@ else:
                 size=4,  
                 color=df['anc'].fillna(0),
                 colorscale=[
-                    [0.0, 'rgba(255, 255, 255, 0.12)'], # High visibility base grid structural dots
+                    [0.0, 'rgba(255, 255, 255, 0.12)'], 
                     [0.1, 'rgba(210, 0, 255, 0.3)'],   
                     [0.5, 'rgba(255, 0, 255, 0.6)'],   
-                    [1.0, 'rgba(255, 0, 255, 0.95)']   # True magenta hotspots
+                    [1.0, 'rgba(255, 0, 255, 0.95)']   
                 ],
                 showscale=False
             ),
@@ -81,7 +81,7 @@ else:
             hoverinfo='text'
         ))
         
-    # 🌟 LAYER 3: Nuclear Infrastructure (Cyan Mesh - Static Safe Construction)
+    # 🌟 LAYER 3: Nuclear Infrastructure (Cyan Mesh)
     if show_nuc and 'nuc' in df.columns:
         fig.add_trace(go.Scattermapbox(
             lat=df[lat_col],
@@ -91,19 +91,19 @@ else:
                 size=4,
                 color=df['nuc'].fillna(0),
                 colorscale=[
-                    [0.0, 'rgba(255, 255, 255, 0.05)'], # Transparent background, stops color bleeding blocks!
+                    [0.0, 'rgba(255, 255, 255, 0.05)'], 
                     [0.2, 'rgba(0, 255, 255, 0.3)'],   
                     [0.7, 'rgba(0, 255, 255, 0.7)'],   
-                    [1.0, 'rgba(0, 255, 255, 0.95)']   # Sharp electric cyan indicator
+                    [1.0, 'rgba(0, 255, 255, 0.95)']   
                 ],
-                showscale=False  # Explicitly turned off to completely avoid internal colorbar bugs
+                showscale=False  
             ),
             name="Nuclear Decay Contours",
             text=[f"Decay Contour Score: {v:.3f}" if pd.notna(v) else "Decay: 0" for v in df['nuc']],
             hoverinfo='text'
         ))
 
-    # 🌟 LAYER 4: UAP Events (Electric Orange Mesh)
+    # 🌟 LAYER 4: UAP Events (Electric Orange Mesh - Rebuilt Native Trace)
     if show_uap and 'uap' in df.columns:
         fig.add_trace(go.Scattermapbox(
             lat=df[lat_col],
@@ -113,12 +113,12 @@ else:
                 size=4,  
                 color=df['uap'].fillna(0),
                 colorscale=[
-                    [0.0, 'rgba(255, 255, 255, 0.05)'], 
+                    [0.0, 'rgba(255, 255, 255, 0.05)'], # Safe transparent baseline grid dots
                     [0.2, 'rgba(255, 170, 0, 0.3)'],   
                     [0.6, 'rgba(255, 170, 0, 0.6)'],   
-                    [1.0, 'rgba(255, 170, 0, 0.95)']   # Pure orange convergence nodes
+                    [1.0, 'rgba(255, 170, 0, 0.95)']   # Electric orange hotspot nodes
                 ],
-                showscale=False
+                showscale=False  # Explicitly turned off to fully avoid internal colorbar crashes
             ),
             name="UAP Sightings Field",
             text=[f"UAP Count: {int(v)}" if pd.notna(v) else "UAP: 0" for v in df['uap']],
@@ -138,7 +138,7 @@ else:
                     [0.0, 'rgba(255, 255, 255, 0.05)'], 
                     [0.2, 'rgba(0, 204, 255, 0.3)'],   
                     [0.6, 'rgba(0, 204, 255, 0.6)'],   
-                    [1.0, 'rgba(0, 204, 255, 0.95)']   # High intensity blue nodes
+                    [1.0, 'rgba(0, 204, 255, 0.95)']   
                 ],
                 showscale=False
             ),
@@ -151,7 +151,7 @@ else:
     fig.update_layout(
         mapbox=dict(
             style="carto-darkmatter",
-            center={"lat": 50.0, "lon": 10.0},  # Clean default frame focusing directly on European sector
+            center={"lat": 50.0, "lon": 10.0},  # Framed perfectly on your European study zone
             zoom=3.2  
         ),
         margin={"r":0,"t":0,"l":0,"b":0},
