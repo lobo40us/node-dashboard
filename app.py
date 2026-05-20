@@ -36,7 +36,7 @@ else:
     fig = go.Figure()
     
     # -----------------------------------------------------------------------------
-    # UNBROKEN GLOBAL GRID MATRIX LAYERS (All layers share the exact same grid layout)
+    # UNBROKEN GLOBAL GRID MATRIX LAYERS (Custom RGBA scales to prevent line bleeding)
     # -----------------------------------------------------------------------------
     
     # 🌟 LAYER 1: Magnetic Anomalies (Emerald Outlines Mesh)
@@ -48,7 +48,10 @@ else:
             marker=go.scattermapbox.Marker(
                 size=4,
                 color=df['mag'].fillna(0),
-                colorscale="Greens",  # Safe native mapping
+                colorscale=[
+                    [0.0, 'rgba(255, 255, 255, 0.05)'], # Faint white node skeleton
+                    [1.0, 'rgba(0, 255, 102, 0.85)']   # Vibrant emerald signal
+                ],
                 showscale=False
             ),
             name="Magnetic Anomalies",
@@ -56,7 +59,7 @@ else:
             hoverinfo='text'
         ))
 
-    # 🌟 LAYER 2: Ancient Sacred Sites (Magenta Mesh)
+    # 🌟 LAYER 2: Ancient Sacred Sites (Purple/Magenta Mesh)
     if show_anc and 'anc' in df.columns:
         fig.add_trace(go.Scattermapbox(
             lat=df[lat_col],
@@ -65,7 +68,12 @@ else:
             marker=go.scattermapbox.Marker(
                 size=4,  
                 color=df['anc'].fillna(0),
-                colorscale="Purples",  # Safe native mapping
+                colorscale=[
+                    [0.0, 'rgba(255, 255, 255, 0.12)'], # High visibility base grid structural dots
+                    [0.1, 'rgba(210, 0, 255, 0.3)'],   
+                    [0.5, 'rgba(255, 0, 255, 0.6)'],   
+                    [1.0, 'rgba(255, 0, 255, 0.95)']   # True magenta hotspots
+                ],
                 showscale=False
             ),
             name="Ancient Sites Field",
@@ -73,9 +81,8 @@ else:
             hoverinfo='text'
         ))
         
-    # 🌟 LAYER 3: Nuclear Infrastructure (Cyan/Blue-Green Mesh)
+    # 🌟 LAYER 3: Nuclear Infrastructure (Cyan Mesh - Static Safe Construction)
     if show_nuc and 'nuc' in df.columns:
-        # Replaced custom dynamic dictionaries with a stable native scale to prevent crashes
         fig.add_trace(go.Scattermapbox(
             lat=df[lat_col],
             lon=df[lon_col],
@@ -83,8 +90,13 @@ else:
             marker=go.scattermapbox.Marker(
                 size=4,
                 color=df['nuc'].fillna(0),
-                colorscale="YlGnBu",  # Highly legible, natively validated dark-to-light cyan/blue scale
-                showscale=False       # No colorbar dictionary means zero validation issues
+                colorscale=[
+                    [0.0, 'rgba(255, 255, 255, 0.05)'], # Transparent background, stops color bleeding blocks!
+                    [0.2, 'rgba(0, 255, 255, 0.3)'],   
+                    [0.7, 'rgba(0, 255, 255, 0.7)'],   
+                    [1.0, 'rgba(0, 255, 255, 0.95)']   # Sharp electric cyan indicator
+                ],
+                showscale=False  # Explicitly turned off to completely avoid internal colorbar bugs
             ),
             name="Nuclear Decay Contours",
             text=[f"Decay Contour Score: {v:.3f}" if pd.notna(v) else "Decay: 0" for v in df['nuc']],
@@ -100,7 +112,12 @@ else:
             marker=go.scattermapbox.Marker(
                 size=4,  
                 color=df['uap'].fillna(0),
-                colorscale="Oranges",  # Safe native mapping
+                colorscale=[
+                    [0.0, 'rgba(255, 255, 255, 0.05)'], 
+                    [0.2, 'rgba(255, 170, 0, 0.3)'],   
+                    [0.6, 'rgba(255, 170, 0, 0.6)'],   
+                    [1.0, 'rgba(255, 170, 0, 0.95)']   # Pure orange convergence nodes
+                ],
                 showscale=False
             ),
             name="UAP Sightings Field",
@@ -117,7 +134,12 @@ else:
             marker=go.scattermapbox.Marker(
                 size=4,  
                 color=df['uso'].fillna(0),
-                colorscale="Blues",  # Safe native mapping
+                colorscale=[
+                    [0.0, 'rgba(255, 255, 255, 0.05)'], 
+                    [0.2, 'rgba(0, 204, 255, 0.3)'],   
+                    [0.6, 'rgba(0, 204, 255, 0.6)'],   
+                    [1.0, 'rgba(0, 204, 255, 0.95)']   # High intensity blue nodes
+                ],
                 showscale=False
             ),
             name="USO Events Field",
@@ -129,7 +151,7 @@ else:
     fig.update_layout(
         mapbox=dict(
             style="carto-darkmatter",
-            center={"lat": 50.0, "lon": 10.0},  # Centered on Europe study area
+            center={"lat": 50.0, "lon": 10.0},  # Clean default frame focusing directly on European sector
             zoom=3.2  
         ),
         margin={"r":0,"t":0,"l":0,"b":0},
