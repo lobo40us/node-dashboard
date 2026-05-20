@@ -47,7 +47,7 @@ else:
             mode='markers',
             marker=go.scattermapbox.Marker(
                 size=3,
-                color=df['mag'],
+                color=df['mag'].fillna(0),
                 colorscale=[
                     [0.0, 'rgba(0, 255, 102, 0.0)'],
                     [1.0, 'rgba(0, 255, 102, 0.6)']
@@ -70,7 +70,7 @@ else:
                 color=df['anc'].fillna(0),
                 colorscale=[
                     [0.0, 'rgba(255, 255, 255, 0.12)'], # Zero nodes show up as a faint white structural mesh point
-                    [0.1, 'rgba(210, 0, 255, 0.3)'],   # FIXED: '21A' changed to valid '210'
+                    [0.1, 'rgba(210, 0, 255, 0.3)'],   
                     [0.5, 'rgba(255, 0, 255, 0.6)'],   # Clear signal presence
                     [1.0, 'rgba(255, 0, 255, 0.95)']   # Maximum intensity node
                 ],
@@ -83,6 +83,9 @@ else:
         
     # 🌟 LAYER 3: Nuclear Infrastructure (Unbroken Decay Field)
     if show_nuc and 'nuc' in df.columns:
+        # Verify if column contains actual valid computed variances to pass to colorbar
+        has_variance = df['nuc'].nunique() > 1 if 'nuc' in df.columns else False
+        
         fig.add_trace(go.Scattermapbox(
             lat=df[lat_col],
             lon=df[lon_col],
@@ -91,12 +94,12 @@ else:
                 size=4,
                 color=df['nuc'].fillna(0),
                 colorscale=[
-                    [0.0, 'rgba(255, 255, 255, 0.05)'], # Minimal structural dots
-                    [0.15, 'rgba(0, 255, 255, 0.3)'],  # Subtle decay glow
-                    [0.6, 'rgba(0, 255, 255, 0.6)'],   # Strong proximity field
-                    [1.0, 'rgba(0, 255, 255, 0.95)']   # Active reactor center
+                    [0.0, 'rgba(255, 255, 255, 0.05)'], 
+                    [0.15, 'rgba(0, 255, 255, 0.3)'],  
+                    [0.6, 'rgba(0, 255, 255, 0.6)'],   
+                    [1.0, 'rgba(0, 255, 255, 0.95)']   
                 ],
-                showscale=True,
+                showscale=True if has_variance else False,
                 colorbar=dict(
                     title="Nuc Decay Contour",
                     thickness=12,
@@ -104,7 +107,7 @@ else:
                     x=1.01,
                     tickfont=dict(color="white", size=9),
                     titlefont=dict(color="white", size=10)
-                )
+                ) if has_variance else None # Safe dynamic configuration to block runtime ValueError drops
             ),
             name="Nuclear Decay Contours",
             text=[f"Decay Contour Score: {v:.3f}" if pd.notna(v) else "Decay: 0" for v in df['nuc']],
@@ -153,8 +156,8 @@ else:
     fig.update_layout(
         mapbox=dict(
             style="carto-darkmatter",
-            center={"lat": 50.0, "lon": 10.0},  # Perfect baseline default framing for European data
-            zoom=3.2  # Slightly closer crop to let individual 1-degree steps pop out clearly
+            center={"lat": 50.0, "lon": 10.0},  # Perfect default framing for your active matrix
+            zoom=3.2  
         ),
         margin={"r":0,"t":0,"l":0,"b":0},
         height=680,
