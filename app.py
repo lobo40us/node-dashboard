@@ -34,15 +34,14 @@ else:
     show_anc = st.sidebar.checkbox("🏛️ Ancient Sacred Sites", value=True)
     show_nuc = st.sidebar.checkbox("⚛️ Nuclear Infrastructure", value=False)
     show_mag = st.sidebar.checkbox("🧲 Magnetic Anomalies", value=False)
+    show_conv = st.sidebar.checkbox("🔴 High Convergence (3+ Layers)", value=True)
     
-    # Dynamic Downsampling to prevent mobile browser WebGL memory crashes
+    # Stochastic Downsampling to preserve spatial integrity without grid striping
     if view_scale == "🌍 Global View (Optimized)":
-        # Slices the dataframe to safely drop point volume down to ~13k points for clean global rendering
-        render_df = df.iloc[::3].copy().reset_index(drop=True)
+        render_df = df.sample(frac=0.33, random_state=42).copy().reset_index(drop=True)
         current_zoom = 1.8
         marker_size = 3
     else:
-        # Full technical resolution when focused on a localized area
         render_df = df.copy()
         current_zoom = 3.5
         marker_size = 4
@@ -53,7 +52,7 @@ else:
     fig = go.Figure()
     
     # -----------------------------------------------------------------------------
-    # HELPER FUNCTION: Native Discrete Color Mapper (Prevents Bleeding)
+    # HELPER FUNCTION: Native Discrete Color Mapper (Bypasses Plotly Shading Bug)
     # -----------------------------------------------------------------------------
     def calculate_discrete_colors(series, base_rgba, peak_rgba_list, thresholds):
         filled = series.fillna(0)
@@ -70,14 +69,16 @@ else:
         return color_list
 
     # -----------------------------------------------------------------------------
-    # UNBROKEN GRID MATRIX LAYERS (Using Explicit Pre-Computed Color Arrays)
+    # UNBROKEN GLOBAL GRID MATRIX LAYERS (Discrete Color Framework)
     # -----------------------------------------------------------------------------
     
-    # 🌟 LAYER 1: Magnetic Anomalies (Emerald Outlines Mesh)
+    # 🌟 LAYER 1: Magnetic Anomalies (EMAG2v3 Calibrated Metrics)
     if show_mag and 'mag' in render_df.columns:
+        mag_thresholds = [68.84, 200.0]  # Q75 and ~Q90 distribution boundaries
         mag_colors = calculate_discrete_colors(
             render_df['mag'], 'rgba(255, 255, 255, 0.04)', 
-            ['rgba(0, 255, 102, 0.3)', 'rgba(0, 255, 102, 0.6)', 'rgba(0, 255, 102, 0.9)'], [2.0, 5.0]
+            ['rgba(0, 255, 102, 0.3)', 'rgba(0, 255, 102, 0.6)', 'rgba(0, 255, 102, 0.9)'], 
+            mag_thresholds
         )
         fig.add_trace(go.Scattermapbox(
             lat=render_df[lat_col], lon=render_df[lon_col], mode='markers',
@@ -91,7 +92,8 @@ else:
     if show_anc and 'anc' in render_df.columns:
         anc_colors = calculate_discrete_colors(
             render_df['anc'], 'rgba(255, 255, 255, 0.08)', 
-            ['rgba(210, 0, 255, 0.3)', 'rgba(255, 0, 255, 0.6)', 'rgba(255, 0, 255, 0.95)'], [1.0, 5.0]
+            ['rgba(210, 0, 255, 0.3)', 'rgba(255, 0, 255, 0.6)', 'rgba(255, 0, 255, 0.95)'], 
+            [1.0, 5.0]
         )
         fig.add_trace(go.Scattermapbox(
             lat=render_df[lat_col], lon=render_df[lon_col], mode='markers',
@@ -101,11 +103,13 @@ else:
             hoverinfo='text'
         ))
         
-    # 🌟 LAYER 3: Nuclear Infrastructure (Cyan Mesh)
+    # 🌟 LAYER 3: Nuclear Infrastructure (Facility Cluster Calibrated Metrics)
     if show_nuc and 'nuc' in render_df.columns:
+        nuc_thresholds = [0.5, 2.0]  # Isolated boundaries vs dense industrial clusters
         nuc_colors = calculate_discrete_colors(
             render_df['nuc'], 'rgba(255, 255, 255, 0.04)', 
-            ['rgba(0, 255, 255, 0.3)', 'rgba(0, 255, 255, 0.6)', 'rgba(0, 255, 255, 0.95)'], [0.1, 0.5]
+            ['rgba(0, 255, 255, 0.3)', 'rgba(0, 255, 255, 0.6)', 'rgba(0, 255, 255, 0.95)'], 
+            nuc_thresholds
         )
         fig.add_trace(go.Scattermapbox(
             lat=render_df[lat_col], lon=render_df[lon_col], mode='markers',
@@ -119,7 +123,8 @@ else:
     if show_uap and 'uap' in render_df.columns:
         uap_colors = calculate_discrete_colors(
             render_df['uap'], 'rgba(255, 255, 255, 0.04)', 
-            ['rgba(255, 170, 0, 0.35)', 'rgba(255, 170, 0, 0.65)', 'rgba(255, 170, 0, 0.95)'], [1.0, 3.0]
+            ['rgba(255, 170, 0, 0.35)', 'rgba(255, 170, 0, 0.65)', 'rgba(255, 170, 0, 0.95)'], 
+            [1.0, 3.0]
         )
         fig.add_trace(go.Scattermapbox(
             lat=render_df[lat_col], lon=render_df[lon_col], mode='markers',
@@ -133,7 +138,8 @@ else:
     if show_uso and 'uso' in render_df.columns:
         uso_colors = calculate_discrete_colors(
             render_df['uso'], 'rgba(255, 255, 255, 0.04)', 
-            ['rgba(0, 204, 255, 0.3)', 'rgba(0, 204, 255, 0.6)', 'rgba(0, 204, 255, 0.95)'], [1.0, 2.0]
+            ['rgba(0, 204, 255, 0.3)', 'rgba(0, 204, 255, 0.6)', 'rgba(0, 204, 255, 0.95)'], 
+            [1.0, 2.0]
         )
         fig.add_trace(go.Scattermapbox(
             lat=render_df[lat_col], lon=render_df[lon_col], mode='markers',
@@ -142,6 +148,22 @@ else:
             text=[f"USO Count: {int(v)}" if pd.notna(v) else "USO: 0" for v in render_df['uso']],
             hoverinfo='text'
         ))
+
+    # 🌟 LAYER 6: CORE SPATIAL SYNTHESIS (High Convergence Multi-Layer Intersection)
+    if show_conv and 'layers' in render_df.columns:
+        conv_df = render_df[render_df['layers'] >= 3].copy().reset_index(drop=True)
+        if not conv_df.empty:
+            fig.add_trace(go.Scattermapbox(
+                lat=conv_df[lat_col], lon=conv_df[lon_col], mode='markers',
+                marker=go.scattermapbox.Marker(
+                    size=7,
+                    color=['rgba(255, 50, 50, 0.9)' if v >= 4 else 'rgba(255, 170, 0, 0.85)'
+                           for v in conv_df['layers']]
+                ),
+                name="High Convergence Nodes",
+                text=[f"Convergence: {int(v)}/5 layers" for v in conv_df['layers']],
+                hoverinfo='text'
+            ))
 
     # 📱 VIEWPORT CONFIGURATIONS
     fig.update_layout(
@@ -161,3 +183,7 @@ else:
     )
     
     st.plotly_chart(fig, use_container_width=True)
+
+    # 🏛️ ACADEMIC RECORD PROVENANCE
+    st.sidebar.markdown("---")
+    st.sidebar.caption("Pre-registered research\nosf.io/a9w4k/ove\nKok & Kok — 2026")
