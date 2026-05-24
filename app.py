@@ -15,11 +15,9 @@ st.markdown("[OSF Pre-Registration: a9w4k/ove](https://osf.io/a9w4k/ove)")
 # 📥 Load Data Pipeline (Handles both Colab Local and Streamlit Cloud environments)
 @st.cache_data
 def load_grid_data():
-    # Check if running in a deployed environment or local repository first
     if os.path.exists("node_thesis_grid.csv"):
         file_path = "node_thesis_grid.csv"
     else:
-        # Default fallback to Google Colab Mount directory
         file_path = "/content/drive/MyDrive/Node/node_thesis_grid.csv"
         
     try:
@@ -43,12 +41,21 @@ if df_raw is not None:
         ["Raw Incident Counts", "Population-Corrected Signals"]
     )
     
-    # Assign mapping columns based on toggle selection
+    # Track status of newly engineered columns to prevent runtime KeyErrors
+    has_corrected_cols = 'uap_corrected' in df.columns and 'uso_corrected' in df.columns
+    has_gradient_col = 'mag_gradient' in df.columns
+    
+    # Assign mapping columns based on toggle selection with defensive fallbacks
     if data_mode == "Population-Corrected Signals":
-        uap_col, uso_col = 'uap_corrected', 'uso_corrected'
-        # Dynamically evaluate active cells using the high-signal thresholds
-        uap_active = df[uap_col] > df[uap_col].quantile(0.85)
-        uso_active = df[uso_col] > df[uso_col].quantile(0.95)
+        if has_corrected_cols:
+            uap_col, uso_col = 'uap_corrected', 'uso_corrected'
+            uap_active = df[uap_col] > df[uap_col].quantile(0.85)
+            uso_active = df[uso_col] > df[uso_col].quantile(0.95)
+        else:
+            st.sidebar.warning("⚠️ Corrected attributes missing from the current CSV. Falling back to Raw Counts.")
+            uap_col, uso_col = 'uap', 'uso'
+            uap_active = df[uap_col] > 0
+            uso_active = df[uso_col] > 0
     else:
         uap_col, uso_col = 'uap', 'uso'
         uap_active = df[uap_col] > 0
@@ -64,15 +71,11 @@ if df_raw is not None:
     st.sidebar.subheader("🗺️ Rendering Viewports")
     view_mode = st.sidebar.selectbox("Select Viewport Focus:", ["Global Overview", "Regional Zoom (MT/WY)"])
     
-    # Define coordinate focus points based on your mobile screenshot requirements
     if view_mode == "Global Overview":
         initial_view = pdk.ViewState(latitude=20.0, longitude=0.0, zoom=1.3, pitch=30)
-        # Apply random sample method to preserve spatial integrity globally without grid-striping
         map_data = df.sample(n=min(15000, len(df)), random_state=42)
     else:
-        # High-density local focal zone (Montana/Wyoming boundary)
         initial_view = pdk.ViewState(latitude=45.5, longitude=-108.5, zoom=5.5, pitch=45)
-        # Filter strictly down to the regional bounding box to see the high-resolution network
         map_data = df[(df['lat'].between(41.0, 49.0)) & (df['lng'].between(-112.0, -104.0))]
 
     # 🎨 Layer Construction Matrix
@@ -100,14 +103,16 @@ if df_raw is not None:
 
     # 3. Geomagnetic Gradient Vector Contour Layer (Hot Orange)
     if show_grad:
-        # Render the gradient rate-of-change fields matching the +412.7% lift signature
-        grad_cells = map_data[map_data['mag_gradient'] >= 10.0]
-        layers.append(pdk.Layer(
-            "ScatterplotLayer", grad_cells,
-            get_position=["lng", "lat"], get_color=[249, 115, 22, 120],
-            get_radius=22000 if view_mode == "Global Overview" else 6500,
-            pickable=True
-        ))
+        if has_gradient_col:
+            grad_cells = map_data[map_data['mag_gradient'] >= 10.0]
+            layers.append(pdk.Layer(
+                "ScatterplotLayer", grad_cells,
+                get_position=["lng", "lat"], get_color=[249, 115, 22, 120],
+                get_radius=22000 if view_mode == "Global Overview" else 6500,
+                pickable=True
+            ))
+        else:
+            st.sidebar.warning("⚠️ 'mag_gradient' column missing from data file. Push updated CSV to GitHub.")
 
     # 4. Active Incident Clusters (Teal Rings)
     incident_cells = map_data[uap_active | uso_active]
@@ -119,11 +124,12 @@ if df_raw is not None:
     ))
 
     # Render DeckGL Object
+    tooltip_text = "Lat: {lat}\nLng: {lng}" + ("\nMag Gradient: {mag_gradient:.2f}" if has_gradient_col else "")
     st.pydeck_chart(pdk.Deck(
         map_style="mapbox://styles/mapbox/dark-v11",
         initial_view_state=initial_view,
         layers=layers,
-        tooltip={"text": "Lat: {lat}\nLng: {lng}\nMag Gradient: {mag_gradient:.2f}"}
+        tooltip={"text": tooltip_text}
     ))
 
     # 📊 LIVE METRIC COUNTERS
@@ -133,7 +139,6 @@ if df_raw is not None:
     with col2:
         st.metric(label="Active Sighting Vectors", value=f"{(uap_active | uso_active).sum():,}")
     with col3:
-        # Dynamic readout for cells where multiple physical layers stack up
         high_convergence_count = ((df['mag'].fillna(0) >= 68.84) & 
                                   (df['nuc'].fillna(0) >= 0.5) & 
                                   (df['anc'].fillna(0) > 0)).sum()
