@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import pydeck as pdk
+import os
 
 st.set_page_config(layout="wide", page_title="Node Thesis Dashboard", page_icon="🛰️")
 
@@ -11,15 +12,21 @@ st.title("🛰️ The Node Thesis Dashboard")
 st.caption("Empirical Spatial Analysis of Global Anomalous Phenomena | Kok & Kok — 2026")
 st.markdown("[OSF Pre-Registration: a9w4k/ove](https://osf.io/a9w4k/ove)")
 
-# 📥 Load Data Pipeline
+# 📥 Load Data Pipeline (Handles both Colab Local and Streamlit Cloud environments)
 @st.cache_data
 def load_grid_data():
-    file_path = "/content/drive/MyDrive/Node/node_thesis_grid.csv"
+    # Check if running in a deployed environment or local repository first
+    if os.path.exists("node_thesis_grid.csv"):
+        file_path = "node_thesis_grid.csv"
+    else:
+        # Default fallback to Google Colab Mount directory
+        file_path = "/content/drive/MyDrive/Node/node_thesis_grid.csv"
+        
     try:
         df = pd.read_csv(file_path)
         return df
     except Exception as e:
-        st.error(f"Failed to load master dataset from Drive: {e}")
+        st.error(f"Failed to load master dataset: {e}")
         return None
 
 df_raw = load_grid_data()
@@ -38,7 +45,7 @@ if df_raw is not None:
     
     # Assign mapping columns based on toggle selection
     if data_mode == "Population-Corrected Signals":
-        uap_col, uso_col = 'uap_corrected', 'uso_corrected']
+        uap_col, uso_col = 'uap_corrected', 'uso_corrected'
         # Dynamically evaluate active cells using the high-signal thresholds
         uap_active = df[uap_col] > df[uap_col].quantile(0.85)
         uso_active = df[uso_col] > df[uso_col].quantile(0.95)
@@ -60,7 +67,7 @@ if df_raw is not None:
     # Define coordinate focus points based on your mobile screenshot requirements
     if view_mode == "Global Overview":
         initial_view = pdk.ViewState(latitude=20.0, longitude=0.0, zoom=1.3, pitch=30)
-        # Apply your optimized random sample method to preserve spatial integrity globally
+        # Apply random sample method to preserve spatial integrity globally without grid-striping
         map_data = df.sample(n=min(15000, len(df)), random_state=42)
     else:
         # High-density local focal zone (Montana/Wyoming boundary)
@@ -116,7 +123,7 @@ if df_raw is not None:
         map_style="mapbox://styles/mapbox/dark-v11",
         initial_view_state=initial_view,
         layers=layers,
-        tooltip={"text": "Lat: {lat}\nLng: {lng}\nLayers Engaged: {layers}\nMag Gradient: {mag_gradient:.2f}"}
+        tooltip={"text": "Lat: {lat}\nLng: {lng}\nMag Gradient: {mag_gradient:.2f}"}
     ))
 
     # 📊 LIVE METRIC COUNTERS
@@ -126,4 +133,8 @@ if df_raw is not None:
     with col2:
         st.metric(label="Active Sighting Vectors", value=f"{(uap_active | uso_active).sum():,}")
     with col3:
-        st.metric(label="True 3+ Layer High Convergence Nodes", value=f"{(df['layers'] >= 3).sum():,}")
+        # Dynamic readout for cells where multiple physical layers stack up
+        high_convergence_count = ((df['mag'].fillna(0) >= 68.84) & 
+                                  (df['nuc'].fillna(0) >= 0.5) & 
+                                  (df['anc'].fillna(0) > 0)).sum()
+        st.metric(label="True 3+ Layer High Convergence Nodes", value=f"{high_convergence_count:,}")
