@@ -1,189 +1,129 @@
+# 🛰️ STREAMLIT DASHBOARD: MAIN APP FRAMEWORK (app.py)
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
-import os
+import numpy as np
+import pydeck as pdk
 
-st.set_page_config(page_title="NODE Thesis Dashboard", layout="wide")
-st.title("🛰️ NODE Multi-Layer Convergence Dashboard")
+st.set_page_config(layout="wide", page_title="Node Thesis Dashboard", page_icon="🛰️")
 
-grid_path = "node_thesis_grid.csv"
+# Title & Headings linked to OSF pre-registration metadata
+st.title("🛰️ The Node Thesis Dashboard")
+st.caption("Empirical Spatial Analysis of Global Anomalous Phenomena | Kok & Kok — 2026")
+st.markdown("[OSF Pre-Registration: a9w4k/ove](https://osf.io/a9w4k/ove)")
 
+# 📥 Load Data Pipeline
 @st.cache_data
-def load_mesh_matrix():
-    if os.path.exists(grid_path):
-        return pd.read_csv(grid_path)
-    return pd.DataFrame()
+def load_grid_data():
+    file_path = "/content/drive/MyDrive/Node/node_thesis_grid.csv"
+    try:
+        df = pd.read_csv(file_path)
+        return df
+    except Exception as e:
+        st.error(f"Failed to load master dataset from Drive: {e}")
+        return None
 
-df = load_mesh_matrix()
+df_raw = load_grid_data()
 
-if df.empty:
-    st.error("Matrix data layer unavailable.")
-else:
-    st.sidebar.header("Layer Visibility Control")
-    st.sidebar.write("Toggle layers to analyze spatial co-location:")
+if df_raw is not None:
+    df = df_raw.copy()
     
-    # 📱 Mobile Viewport Optimization Control
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("📱 Performance Engine")
-    view_scale = st.sidebar.radio("Map Zoom Scale:", ["🌍 Global View (Optimized)", "🔍 Regional Zoom (100% Detail)"], index=0)
+    # 🎛️ SIDEBAR CONTROLS
+    st.sidebar.header("📊 Analytical Controls")
     
-    st.sidebar.markdown("---")
-    # Independent checkboxes for true multi-layer stacking
-    show_uap = st.sidebar.checkbox("🛸 UAP Events", value=True)
-    show_uso = st.sidebar.checkbox("🌊 USO (Submerged) Events", value=False)
-    show_anc = st.sidebar.checkbox("🏛️ Ancient Sacred Sites", value=True)
-    show_nuc = st.sidebar.checkbox("⚛️ Nuclear Infrastructure", value=False)
-    show_mag = st.sidebar.checkbox("🧲 Magnetic Anomalies", value=False)
-    show_conv = st.sidebar.checkbox("🔴 High Convergence (3+ Layers)", value=True)
-    
-    # Stochastic Downsampling to preserve spatial integrity without grid striping
-    if view_scale == "🌍 Global View (Optimized)":
-        render_df = df.sample(frac=0.33, random_state=42).copy().reset_index(drop=True)
-        current_zoom = 1.8
-        marker_size = 3
-    else:
-        render_df = df.copy()
-        current_zoom = 3.5
-        marker_size = 4
-
-    lon_col = 'lng' if 'lng' in render_df.columns else 'lon'
-    lat_col = 'lat'
-    
-    fig = go.Figure()
-    
-    # -----------------------------------------------------------------------------
-    # HELPER FUNCTION: Native Discrete Color Mapper (Bypasses Plotly Shading Bug)
-    # -----------------------------------------------------------------------------
-    def calculate_discrete_colors(series, base_rgba, peak_rgba_list, thresholds):
-        filled = series.fillna(0)
-        color_list = []
-        for val in filled:
-            if val <= 0:
-                color_list.append(base_rgba)
-            elif val <= thresholds[0]:
-                color_list.append(peak_rgba_list[0])
-            elif val <= thresholds[1]:
-                color_list.append(peak_rgba_list[1])
-            else:
-                color_list.append(peak_rgba_list[2])
-        return color_list
-
-    # -----------------------------------------------------------------------------
-    # UNBROKEN GLOBAL GRID MATRIX LAYERS (Discrete Color Framework)
-    # -----------------------------------------------------------------------------
-    
-    # 🌟 LAYER 1: Magnetic Anomalies (EMAG2v3 Calibrated Metrics)
-    if show_mag and 'mag' in render_df.columns:
-        mag_thresholds = [68.84, 200.0]  # Q75 and ~Q90 distribution boundaries
-        mag_colors = calculate_discrete_colors(
-            render_df['mag'], 'rgba(255, 255, 255, 0.04)', 
-            ['rgba(0, 255, 102, 0.3)', 'rgba(0, 255, 102, 0.6)', 'rgba(0, 255, 102, 0.9)'], 
-            mag_thresholds
-        )
-        fig.add_trace(go.Scattermapbox(
-            lat=render_df[lat_col], lon=render_df[lon_col], mode='markers',
-            marker=go.scattermapbox.Marker(size=marker_size, color=mag_colors),
-            name="Magnetic Anomalies",
-            text=[f"Mag: {v:.1f} nT" if pd.notna(v) else "Mag: 0" for v in render_df['mag']],
-            hoverinfo='text'
-        ))
-
-    # 🌟 LAYER 2: Ancient Sacred Sites (Purple/Magenta Mesh)
-    if show_anc and 'anc' in render_df.columns:
-        anc_colors = calculate_discrete_colors(
-            render_df['anc'], 'rgba(255, 255, 255, 0.08)', 
-            ['rgba(210, 0, 255, 0.3)', 'rgba(255, 0, 255, 0.6)', 'rgba(255, 0, 255, 0.95)'], 
-            [1.0, 5.0]
-        )
-        fig.add_trace(go.Scattermapbox(
-            lat=render_df[lat_col], lon=render_df[lon_col], mode='markers',
-            marker=go.scattermapbox.Marker(size=marker_size, color=anc_colors),
-            name="Ancient Sites Field",
-            text=[f"Ancient Intensity: {v:.2f}" if pd.notna(v) else "Ancient: 0" for v in render_df['anc']],
-            hoverinfo='text'
-        ))
-        
-    # 🌟 LAYER 3: Nuclear Infrastructure (Facility Cluster Calibrated Metrics)
-    if show_nuc and 'nuc' in render_df.columns:
-        nuc_thresholds = [0.5, 2.0]  # Isolated boundaries vs dense industrial clusters
-        nuc_colors = calculate_discrete_colors(
-            render_df['nuc'], 'rgba(255, 255, 255, 0.04)', 
-            ['rgba(0, 255, 255, 0.3)', 'rgba(0, 255, 255, 0.6)', 'rgba(0, 255, 255, 0.95)'], 
-            nuc_thresholds
-        )
-        fig.add_trace(go.Scattermapbox(
-            lat=render_df[lat_col], lon=render_df[lon_col], mode='markers',
-            marker=go.scattermapbox.Marker(size=marker_size, color=nuc_colors),
-            name="Nuclear Decay Contours",
-            text=[f"Decay Score: {v:.3f}" if pd.notna(v) else "Decay: 0" for v in render_df['nuc']],
-            hoverinfo='text'
-        ))
-
-    # 🌟 LAYER 4: UAP Events (Electric Orange Mesh)
-    if show_uap and 'uap' in render_df.columns:
-        uap_colors = calculate_discrete_colors(
-            render_df['uap'], 'rgba(255, 255, 255, 0.04)', 
-            ['rgba(255, 170, 0, 0.35)', 'rgba(255, 170, 0, 0.65)', 'rgba(255, 170, 0, 0.95)'], 
-            [1.0, 3.0]
-        )
-        fig.add_trace(go.Scattermapbox(
-            lat=render_df[lat_col], lon=render_df[lon_col], mode='markers',
-            marker=go.scattermapbox.Marker(size=marker_size, color=uap_colors),
-            name="UAP Sightings Field",
-            text=[f"UAP Count: {int(v)}" if pd.notna(v) else "UAP: 0" for v in render_df['uap']],
-            hoverinfo='text'
-        ))
-
-    # 🌟 LAYER 5: USO Submerged Events (Deep Teal Blue Mesh)
-    if show_uso and 'uso' in render_df.columns:
-        uso_colors = calculate_discrete_colors(
-            render_df['uso'], 'rgba(255, 255, 255, 0.04)', 
-            ['rgba(0, 204, 255, 0.3)', 'rgba(0, 204, 255, 0.6)', 'rgba(0, 204, 255, 0.95)'], 
-            [1.0, 2.0]
-        )
-        fig.add_trace(go.Scattermapbox(
-            lat=render_df[lat_col], lon=render_df[lon_col], mode='markers',
-            marker=go.scattermapbox.Marker(size=marker_size, color=uso_colors),
-            name="USO Events Field",
-            text=[f"USO Count: {int(v)}" if pd.notna(v) else "USO: 0" for v in render_df['uso']],
-            hoverinfo='text'
-        ))
-
-    # 🌟 LAYER 6: CORE SPATIAL SYNTHESIS (High Convergence Multi-Layer Intersection)
-    if show_conv and 'layers' in render_df.columns:
-        conv_df = render_df[render_df['layers'] >= 3].copy().reset_index(drop=True)
-        if not conv_df.empty:
-            fig.add_trace(go.Scattermapbox(
-                lat=conv_df[lat_col], lon=conv_df[lon_col], mode='markers',
-                marker=go.scattermapbox.Marker(
-                    size=7,
-                    color=['rgba(255, 50, 50, 0.9)' if v >= 4 else 'rgba(255, 170, 0, 0.85)'
-                           for v in conv_df['layers']]
-                ),
-                name="High Convergence Nodes",
-                text=[f"Convergence: {int(v)}/5 layers" for v in conv_df['layers']],
-                hoverinfo='text'
-            ))
-
-    # 📱 VIEWPORT CONFIGURATIONS
-    fig.update_layout(
-        mapbox=dict(
-            style="carto-darkmatter",
-            center={"lat": 40.0, "lon": -20.0} if view_scale == "🌍 Global View (Optimized)" else {"lat": 50.0, "lon": 10.0},
-            zoom=current_zoom  
-        ),
-        margin={"r":0,"t":0,"l":0,"b":0},
-        height=680,
-        showlegend=True,
-        legend=dict(
-            orientation="h", yanchor="bottom", y=0.01, xanchor="center", x=0.5,
-            bgcolor="rgba(10,10,10,0.85)", bordercolor="rgba(255,255,255,0.1)", borderwidth=1,
-            font=dict(color="white", size=9)
-        )
+    # Toggle 1: Normalization Method
+    data_mode = st.sidebar.radio(
+        "Normalization Matrix:",
+        ["Raw Incident Counts", "Population-Corrected Signals"]
     )
     
-    st.plotly_chart(fig, use_container_width=True)
+    # Assign mapping columns based on toggle selection
+    if data_mode == "Population-Corrected Signals":
+        uap_col, uso_col = 'uap_corrected', 'uso_corrected']
+        # Dynamically evaluate active cells using the high-signal thresholds
+        uap_active = df[uap_col] > df[uap_col].quantile(0.85)
+        uso_active = df[uso_col] > df[uso_col].quantile(0.95)
+    else:
+        uap_col, uso_col = 'uap', 'uso'
+        uap_active = df[uap_col] > 0
+        uso_active = df[uso_col] > 0
 
-    # 🏛️ ACADEMIC RECORD PROVENANCE
-    st.sidebar.markdown("---")
-    st.sidebar.caption("Pre-registered research\nosf.io/a9w4k/ove\nKok & Kok — 2026")
+    # Toggle 2: Environmental Layers
+    st.sidebar.subheader("🌐 Biophysical Layers")
+    show_nuc = st.sidebar.checkbox("Nuclear Proximity Zones (≥ 0.5)", value=True)
+    show_anc = st.sidebar.checkbox("Ancient Sacred Sites", value=True)
+    show_grad = st.sidebar.checkbox("Geomagnetic Gradient Edges", value=True)
+
+    # 🗺️ MAP ENGINE SETUP
+    st.sidebar.subheader("🗺️ Rendering Viewports")
+    view_mode = st.sidebar.selectbox("Select Viewport Focus:", ["Global Overview", "Regional Zoom (MT/WY)"])
+    
+    # Define coordinate focus points based on your mobile screenshot requirements
+    if view_mode == "Global Overview":
+        initial_view = pdk.ViewState(latitude=20.0, longitude=0.0, zoom=1.3, pitch=30)
+        # Apply your optimized random sample method to preserve spatial integrity globally
+        map_data = df.sample(n=min(15000, len(df)), random_state=42)
+    else:
+        # High-density local focal zone (Montana/Wyoming boundary)
+        initial_view = pdk.ViewState(latitude=45.5, longitude=-108.5, zoom=5.5, pitch=45)
+        # Filter strictly down to the regional bounding box to see the high-resolution network
+        map_data = df[(df['lat'].between(41.0, 49.0)) & (df['lng'].between(-112.0, -104.0))]
+
+    # 🎨 Layer Construction Matrix
+    layers = []
+
+    # 1. Nuclear Layer (Purple)
+    if show_nuc:
+        nuc_cells = map_data[map_data['nuc'].fillna(0) >= 0.5]
+        layers.append(pdk.Layer(
+            "ScatterplotLayer", nuc_cells,
+            get_position=["lng", "lat"], get_color=[147, 51, 234, 140],
+            get_radius=28000 if view_mode == "Global Overview" else 8000,
+            pickable=True
+        ))
+
+    # 2. Ancient Sacred Sites Layer (Emerald)
+    if show_anc:
+        anc_cells = map_data[map_data['anc'].fillna(0) > 0]
+        layers.append(pdk.Layer(
+            "ScatterplotLayer", anc_cells,
+            get_position=["lng", "lat"], get_color=[16, 185, 129, 140],
+            get_radius=25000 if view_mode == "Global Overview" else 7500,
+            pickable=True
+        ))
+
+    # 3. Geomagnetic Gradient Vector Contour Layer (Hot Orange)
+    if show_grad:
+        # Render the gradient rate-of-change fields matching the +412.7% lift signature
+        grad_cells = map_data[map_data['mag_gradient'] >= 10.0]
+        layers.append(pdk.Layer(
+            "ScatterplotLayer", grad_cells,
+            get_position=["lng", "lat"], get_color=[249, 115, 22, 120],
+            get_radius=22000 if view_mode == "Global Overview" else 6500,
+            pickable=True
+        ))
+
+    # 4. Active Incident Clusters (Teal Rings)
+    incident_cells = map_data[uap_active | uso_active]
+    layers.append(pdk.Layer(
+        "ScatterplotLayer", incident_cells,
+        get_position=["lng", "lat"], get_color=[6, 182, 212, 225],
+        get_radius=35000 if view_mode == "Global Overview" else 10000,
+        stroked=True, filled=False, lw=3, pickable=True
+    ))
+
+    # Render DeckGL Object
+    st.pydeck_chart(pdk.Deck(
+        map_style="mapbox://styles/mapbox/dark-v11",
+        initial_view_state=initial_view,
+        layers=layers,
+        tooltip={"text": "Lat: {lat}\nLng: {lng}\nLayers Engaged: {layers}\nMag Gradient: {mag_gradient:.2f}"}
+    ))
+
+    # 📊 LIVE METRIC COUNTERS
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric(label="Selected Grid Nodes", value=f"{len(map_data):,}")
+    with col2:
+        st.metric(label="Active Sighting Vectors", value=f"{(uap_active | uso_active).sum():,}")
+    with col3:
+        st.metric(label="True 3+ Layer High Convergence Nodes", value=f"{(df['layers'] >= 3).sum():,}")
